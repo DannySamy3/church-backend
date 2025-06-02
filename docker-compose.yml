@@ -6,21 +6,8 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - MONGODB_URI=mongodb://admin:secret@mongodb:27017/ubh-db?authSource=admin
-      # MONGODB_URI=mongodb://admin:secret@13.51.178.67:27018/ubh-db?authSource=admin
-
+      # For Linux, use 172.17.0.1 as the Docker host gateway
+      - MONGODB_URI=mongodb://admin:secret@172.17.0.1:27018/ubh-db?authSource=admin
       - NODE_ENV=production
-    depends_on:
-      - mongodb
     restart: unless-stopped
 
-  mongodb:
-    image: mongo:latest
-    ports:
-      - "27018:27017"
-    volumes:
-      - mongodb_data:/data/db
-    restart: unless-stopped
-
-volumes:
-  mongodb_data:

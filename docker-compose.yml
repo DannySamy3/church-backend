@@ -6,7 +6,7 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - MONGODB_URI=mongodb://admin:secret@13.51.178.67:27018/ubh-db?authSource=admin
+      - MONGODB_URI=mongodb://admin:secret@mongodb:27017/ubh-db?authSource=admin
 
       - NODE_ENV=production
     depends_on:

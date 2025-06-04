@@ -131,7 +131,7 @@ export const login = async (req: Request, res: Response) => {
     if (!user) {
       return res.status(401).json({
         error: "Authentication Error",
-        details: "Invalid email or password.",
+        details: "User not found",
       });
     }
 

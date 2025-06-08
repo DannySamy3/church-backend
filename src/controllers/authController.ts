@@ -126,9 +126,11 @@ export const register = async (req: Request, res: Response) => {
 export const login = async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
+    console.log("Login attempt for email:", email);
 
     const user = await User.findOne({ email });
     if (!user) {
+      console.log("User not found for email:", email);
       return res.status(401).json({
         error: "Authentication Error",
         details: "User not found",
@@ -136,7 +138,10 @@ export const login = async (req: Request, res: Response) => {
     }
 
     const isMatch = await user.comparePassword(password);
+    console.log("Password match result:", isMatch);
+
     if (!isMatch) {
+      console.log("Invalid password for email:", email);
       return res.status(401).json({
         error: "Authentication Error",
         details: "Invalid email or password.",
@@ -155,6 +160,7 @@ export const login = async (req: Request, res: Response) => {
       { expiresIn: "7d" }
     );
 
+    console.log("Login successful for user:", user._id);
     res.status(200).json({
       message: "Login successful",
       user: {

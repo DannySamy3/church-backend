@@ -32,7 +32,17 @@ const app = express();
 // Middleware
 app.use(
   cors({
-    origin: ["https://church-app-dev.netlify.app", "http://localhost:3000"],
+    origin: function (origin, callback) {
+      const allowedOrigins = [
+        "https://church-app-dev.netlify.app",
+        "http://localhost:3000",
+      ];
+      if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     allowedHeaders: [
       "Content-Type",
@@ -50,24 +60,6 @@ app.use(
     optionsSuccessStatus: 204,
   })
 );
-
-// Add additional CORS headers middleware
-app.use((req: Request, res: Response, next: NextFunction) => {
-  res.header(
-    "Access-Control-Allow-Origin",
-    "https://church-app-dev.netlify.app"
-  );
-  res.header(
-    "Access-Control-Allow-Methods",
-    "GET, POST, PUT, DELETE, OPTIONS, PATCH"
-  );
-  res.header(
-    "Access-Control-Allow-Headers",
-    "Content-Type, Authorization, X-Requested-With, Accept, Origin"
-  );
-  res.header("Access-Control-Allow-Credentials", "true");
-  next();
-});
 
 app.use(express.json({ limit: "1mb" }));
 app.use(express.urlencoded({ extended: true }));

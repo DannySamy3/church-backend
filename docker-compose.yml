@@ -8,9 +8,8 @@ services:
     environment:
       # For Linux, use 172.17.0.1 as the Docker host gateway
       - MONGODB_URI=mongodb://admin:secret@172.17.0.1:27018/ubh-db?authSource=admin
-      #- MONGODB_URI=mongodb://admin:secret@13.51.178.67:27018/ubh-db?authSource=admin
+      # - MONGODB_URI=mongodb://admin:secret@13.51.178.67:27018/ubh-db?authSource=admin
 
       # - MONGODB_URI=mongodb+srv://dannysamy3:Zinc%40100%25@my-app.iqb38.mongodb.net/ubh-db?retryWrites=true&w=majority&appName=my-app
       - NODE_ENV=production
     restart: unless-stopped
-

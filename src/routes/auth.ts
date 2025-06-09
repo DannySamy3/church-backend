@@ -13,4 +13,7 @@ router.post("/setup", adminCreationAuth, register);
 // Login
 router.post("/login", login);
 
+// Get current user
+router.get("/me", auth);
+
 export default router;

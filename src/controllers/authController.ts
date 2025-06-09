@@ -127,8 +127,6 @@ export const login = async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
     console.log("Login attempt for email:", email);
-    console.log("Login request origin:", req.headers.origin);
-    console.log("Login response headers before:", res.getHeaders());
 
     const user = await User.findOne({ email });
     if (!user) {
@@ -163,17 +161,6 @@ export const login = async (req: Request, res: Response) => {
     );
 
     console.log("Login successful for user:", user._id);
-    console.log("Login response headers after:", res.getHeaders());
-
-    // Ensure CORS headers are set correctly
-    const origin = req.headers.origin;
-    if (
-      origin === "http://localhost:3000" ||
-      origin === "https://church-app-dev.netlify.app"
-    ) {
-      res.setHeader("Access-Control-Allow-Origin", origin);
-      res.setHeader("Access-Control-Allow-Credentials", "true");
-    }
 
     res.status(200).json({
       message: "Login successful",

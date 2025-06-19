@@ -34,22 +34,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // CORS configuration
 const corsOptions = {
-  origin: function (
-    origin: string | undefined,
-    callback: (err: Error | null, allow?: boolean) => void
-  ) {
-    console.log("CORS request from origin:", origin);
-    const allowedOrigins = [
-      "http://localhost:3000",
-      "https://church-app-dev.netlify.app",
-    ];
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      console.log("CORS blocked request from:", origin);
-      callback(new Error("Not allowed by CORS"));
-    }
-  },
+  origin: true, // Allow all origins
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
   allowedHeaders: [

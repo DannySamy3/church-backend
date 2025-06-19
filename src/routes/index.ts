@@ -10,19 +10,19 @@ router.use("/auth", require("./auth"));
 // Admin routes
 router.use("/admin", auth, checkRole([UserRole.ADMIN]), require("./admin"));
 
-// Instructor routes
+// Clerk routes (previously member routes)
 router.use(
-  "/instructor",
+  "/clerk",
   auth,
-  checkRole([UserRole.ADMIN, UserRole.INSTRUCTOR]),
-  require("./instructor")
+  checkRole([UserRole.ADMIN, UserRole.CLERK]),
+  require("./member")
 );
 
-// Member routes
+// Regular user routes
 router.use(
-  "/member",
+  "/regular",
   auth,
-  checkRole([UserRole.ADMIN, UserRole.INSTRUCTOR, UserRole.MEMBER]),
+  checkRole([UserRole.ADMIN, UserRole.CLERK, UserRole.REGULAR]),
   require("./member")
 );
 

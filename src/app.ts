@@ -6,11 +6,10 @@ import mongoose from "mongoose";
 import { auth } from "./middleware/auth";
 import { organizationMiddleware } from "./middleware/organization";
 import authRoutes from "./routes/auth";
-import userRoutes from "./routes/users";
-import adminRoutes from "./routes/admin";
+
+import userRoutes from "./routes/user";
 import moderatorRoutes from "./routes/moderator";
 import lessonRoutes from "./routes/lessons";
-import customerRoutes from "./routes/customers";
 import organizationRoutes from "./routes/organizations";
 
 // Load environment variables with explicit path
@@ -51,21 +50,36 @@ app.use(
   })
 );
 
-// Add additional CORS headers middleware
-app.use((req: Request, res: Response, next: NextFunction) => {
-  res.header(
-    "Access-Control-Allow-Origin",
-    "https://church-app-dev.netlify.app"
-  );
-  res.header(
-    "Access-Control-Allow-Methods",
-    "GET, POST, PUT, DELETE, OPTIONS, PATCH"
-  );
-  res.header(
-    "Access-Control-Allow-Headers",
-    "Content-Type, Authorization, X-Requested-With, Accept, Origin"
-  );
-  res.header("Access-Control-Allow-Credentials", "true");
+// CORS configuration
+const corsOptions = {
+  origin: true, // Allow all origins
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+  allowedHeaders: [
+    "Content-Type",
+    "Authorization",
+    "X-Requested-With",
+    "Accept",
+    "Origin",
+  ],
+  exposedHeaders: ["Content-Range", "X-Content-Range"],
+  maxAge: 86400, // 24 hours
+};
+
+// Apply CORS middleware
+app.use(cors(corsOptions));
+
+// Handle preflight requests explicitly
+app.options("*", cors(corsOptions));
+
+// Debug middleware to log all requests
+app.use((req, res, next) => {
+  console.log("Incoming request:", {
+    method: req.method,
+    path: req.path,
+    origin: req.headers.origin,
+    headers: req.headers,
+  });
   next();
 });
 
@@ -99,10 +113,8 @@ app.use((err: any, req: Request, res: Response, next: NextFunction) => {
 app.use("/church/auth", authRoutes);
 app.use("/church/organizations", organizationRoutes);
 app.use("/church/users", auth, organizationMiddleware, userRoutes);
-app.use("/church/admin", auth, organizationMiddleware, adminRoutes);
 app.use("/church/moderator", auth, organizationMiddleware, moderatorRoutes);
 app.use("/church/lessons", auth, organizationMiddleware, lessonRoutes);
-app.use("/church/customers", auth, organizationMiddleware, customerRoutes);
 
 // Health check endpoint
 app.get("/health", (req: Request, res: Response) => {

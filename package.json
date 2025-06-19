@@ -7,7 +7,9 @@
     "build": "tsc",
     "start": "node dist/app.js",
     "lint": "eslint . --ext .ts",
-    "test": "jest"
+    "test": "jest",
+    "seed": "npm run seed:users",
+    "seed:users": "ts-node src/seeds/userSeed.ts"
   },
   "dependencies": {
     "@types/multer": "^1.4.12",
@@ -28,6 +30,7 @@
     "react-router-dom": "^7.5.3"
   },
   "devDependencies": {
+    "@faker-js/faker": "^9.8.0",
     "@types/bcryptjs": "^2.4.6",
     "@types/cors": "^2.8.17",
     "@types/express": "^4.17.21",

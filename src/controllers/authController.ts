@@ -12,12 +12,26 @@ export const register = async (req: Request, res: Response) => {
       email,
       phoneNumber,
       password,
-      role,
-      isInstructor,
       organization,
     } = req.body;
 
-    // Check if user exists
+    // Validate required fields
+    if (
+      !firstName ||
+      !lastName ||
+      !email ||
+      !phoneNumber ||
+      !password ||
+      !organization
+    ) {
+      return res.status(400).json({
+        error: "Missing required fields",
+        details:
+          "firstName, lastName, email, phoneNumber, password, and organization are required",
+      });
+    }
+
+    // Check if email is already associated with any user (in any organization)
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({
@@ -26,50 +40,16 @@ export const register = async (req: Request, res: Response) => {
       });
     }
 
-    // Check if this is the first user in the system
-    const userCount = await User.countDocuments();
-    const isFirstUser = userCount === 0;
-
     // Check if this is the first user in this organization
     const orgUserCount = await User.countDocuments({ organization });
-    const isFirstOrgUser = orgUserCount === 0;
-
-    // If not the first user in the system and not the first user in the organization
-    if (!isFirstUser && !isFirstOrgUser) {
-      // Check if the request is from an admin
-      if (!req.user || req.user.role !== UserRole.ADMIN) {
-        return res.status(403).json({
-          error: "Permission Denied",
-          details: "Only administrators can register new users.",
-        });
-      }
-
-      // Verify the admin is registering for their own organization
-      if (req.user.organization !== organization) {
-        return res.status(403).json({
-          error: "Permission Denied",
-          details: "You can only register users for your own organization.",
-        });
-      }
-
-      // Check if trying to create an admin user
-      if (role === UserRole.ADMIN) {
-        // Check if organization already has an admin
-        const adminCount = await User.countDocuments({
-          organization,
-          role: UserRole.ADMIN,
-        });
-
-        if (adminCount > 0) {
-          return res.status(403).json({
-            error: "Permission Denied",
-            details: "This organization already has an administrator.",
-          });
-        }
-      }
+    if (orgUserCount > 0) {
+      return res.status(403).json({
+        error: "Permission Denied",
+        details: "This organization already has an administrator.",
+      });
     }
 
-    // Create new user
+    // Create new admin user for the organization
     const user = new User({
       firstName,
       middleName,
@@ -77,11 +57,7 @@ export const register = async (req: Request, res: Response) => {
       email,
       phoneNumber,
       password,
-      role:
-        isFirstUser || isFirstOrgUser
-          ? UserRole.ADMIN
-          : role || UserRole.MEMBER,
-      isInstructor: isInstructor || false,
+      role: UserRole.ADMIN,
       organization,
     });
 
@@ -92,7 +68,6 @@ export const register = async (req: Request, res: Response) => {
       {
         id: user._id,
         role: user.role,
-        isInstructor: user.isInstructor,
         organization: user.organization,
       },
       process.env.JWT_SECRET!,
@@ -100,7 +75,7 @@ export const register = async (req: Request, res: Response) => {
     );
 
     res.status(201).json({
-      message: "User created successfully",
+      message: "Admin user created successfully",
       user: {
         id: user._id,
         firstName: user.firstName,
@@ -109,7 +84,6 @@ export const register = async (req: Request, res: Response) => {
         email: user.email,
         phoneNumber: user.phoneNumber,
         role: user.role,
-        isInstructor: user.isInstructor,
         organization: user.organization,
       },
       token,
@@ -148,12 +122,11 @@ export const login = async (req: Request, res: Response) => {
       });
     }
 
-    // Generate token with role, instructor status, and organization
+    // Generate token with role and organization
     const token = jwt.sign(
       {
         id: user._id,
         role: user.role,
-        isInstructor: user.isInstructor,
         organization: user.organization,
       },
       process.env.JWT_SECRET!,
@@ -172,7 +145,6 @@ export const login = async (req: Request, res: Response) => {
         email: user.email,
         phoneNumber: user.phoneNumber,
         role: user.role,
-        isInstructor: user.isInstructor,
         organization: user.organization,
       },
       token,

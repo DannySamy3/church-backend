@@ -8,5 +8,6 @@ export type { IUser };
 export interface JwtPayload {
   id: string;
   role: UserRole;
-  isInstructor: boolean;
+  organization: string;
+  isInstructor?: boolean;
 }

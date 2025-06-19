@@ -6,11 +6,10 @@ import mongoose from "mongoose";
 import { auth } from "./middleware/auth";
 import { organizationMiddleware } from "./middleware/organization";
 import authRoutes from "./routes/auth";
-import userRoutes from "./routes/users";
-import adminRoutes from "./routes/admin";
+
+import userRoutes from "./routes/user";
 import moderatorRoutes from "./routes/moderator";
 import lessonRoutes from "./routes/lessons";
-import customerRoutes from "./routes/customers";
 import organizationRoutes from "./routes/organizations";
 
 // Load environment variables with explicit path
@@ -108,10 +107,8 @@ app.use((err: any, req: Request, res: Response, next: NextFunction) => {
 app.use("/church/auth", authRoutes);
 app.use("/church/organizations", organizationRoutes);
 app.use("/church/users", auth, organizationMiddleware, userRoutes);
-app.use("/church/admin", auth, organizationMiddleware, adminRoutes);
 app.use("/church/moderator", auth, organizationMiddleware, moderatorRoutes);
 app.use("/church/lessons", auth, organizationMiddleware, lessonRoutes);
-app.use("/church/customers", auth, organizationMiddleware, customerRoutes);
 
 // Health check endpoint
 app.get("/health", (req: Request, res: Response) => {

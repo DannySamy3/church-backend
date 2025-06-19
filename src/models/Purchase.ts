@@ -1,10 +1,8 @@
 import mongoose, { Document, Schema } from "mongoose";
-import { ICustomer } from "./Customer";
 import { IUser } from "./User";
 import { ILesson } from "./Lesson";
 
 export interface IPurchase extends Document {
-  customerId: ICustomer["_id"];
   releaseStatus: "pending" | "released" | "cancelled";
   date: Date;
   issuedBy: IUser["_id"];
@@ -13,11 +11,6 @@ export interface IPurchase extends Document {
 
 const purchaseSchema = new Schema<IPurchase>(
   {
-    customerId: {
-      type: Schema.Types.ObjectId,
-      ref: "Customer",
-      required: true,
-    },
     releaseStatus: {
       type: String,
       enum: ["pending", "released", "cancelled"],

@@ -12,6 +12,7 @@ export interface IUser extends Document {
   role: UserRole;
   organization: string;
   profileImageUrl?: string;
+  address?: string;
   comparePassword(candidatePassword: string): Promise<boolean>;
 }
 
@@ -33,7 +34,9 @@ const userSchema = new Schema<IUser>(
     },
     email: {
       type: String,
-      required: true,
+      required: function (this: IUser) {
+        return this.role !== UserRole.REGULAR;
+      },
       unique: true,
       trim: true,
       lowercase: true,
@@ -45,13 +48,15 @@ const userSchema = new Schema<IUser>(
     },
     password: {
       type: String,
-      required: true,
+      required: function (this: IUser) {
+        return this.role !== UserRole.REGULAR;
+      },
       minlength: 6,
     },
     role: {
       type: String,
       enum: Object.values(UserRole),
-      default: UserRole.MEMBER,
+      default: UserRole.CLERK,
     },
     organization: {
       type: String,
@@ -59,6 +64,10 @@ const userSchema = new Schema<IUser>(
       trim: true,
     },
     profileImageUrl: {
+      type: String,
+      trim: true,
+    },
+    address: {
       type: String,
       trim: true,
     },
@@ -70,7 +79,7 @@ const userSchema = new Schema<IUser>(
 
 // Hash password before saving
 userSchema.pre("save", async function (next) {
-  if (!this.isModified("password")) return next();
+  if (!this.isModified("password") || !this.password) return next();
 
   try {
     const salt = await bcrypt.genSalt(10);
@@ -92,9 +101,7 @@ userSchema.methods.comparePassword = async function (
 userSchema.pre("save", function (next) {
   if (this.isModified("role")) {
     const oldRole = this.get("role");
-    if (oldRole === UserRole.INSTRUCTOR && this.role === UserRole.MEMBER) {
-      return next(new Error("Instructors cannot be downgraded to member"));
-    }
+    // Remove instructor-specific validation
   }
   next();
 });

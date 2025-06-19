@@ -3,29 +3,38 @@ import jwt from "jsonwebtoken";
 import { UserRole } from "../types";
 import { User } from "../models/User";
 import { Organization } from "../models/Organization";
+import { JwtPayload } from "../types";
 
 export const auth = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    console.log("Auth middleware called");
     const token = req.headers.authorization?.replace("Bearer ", "");
+    console.log("Token:", token);
 
     if (!token) {
+      console.log("No token provided");
       return res
         .status(401)
         .json({ error: "No authentication token provided" });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as {
-      id: string;
-    };
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as JwtPayload;
+    console.log("Decoded token:", decoded);
+
     const user = await User.findById(decoded.id);
+    console.log("Found user:", user);
 
     if (!user) {
+      console.log("User not found");
       return res.status(401).json({ error: "User not found" });
     }
 
+    // Set the user object on the request
     req.user = user;
+    console.log("Set user on request:", req.user);
     next();
   } catch (error) {
+    console.error("Auth middleware error:", error);
     res.status(401).json({ error: "Please authenticate" });
   }
 };

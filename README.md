@@ -113,32 +113,3 @@ The application supports three roles:
   docker run -p 8000:8000 --env-file .env ubh-backend
   ```
   Make sure to update your `.env` to point to an accessible MongoDB instance.
-
-## Database Migrations
-
-This project uses [migrate-mongo](https://github.com/seppevs/migrate-mongo) for MongoDB migrations.
-
-### Setup
-
-- The migration system is already initialized.
-- MongoDB connection details are read from your `.env` file (`MONGODB_URI` and `MONGODB_DB`).
-
-### Running Migrations
-
-- To apply all pending migrations:
-  ```bash
-  npm run migrate:mongo:up
-  ```
-- To rollback the last migration:
-  ```bash
-  npm run migrate:mongo:down
-  ```
-- To create a new migration file:
-  ```bash
-  npm run migrate:mongo:create -- your-migration-name
-  ```
-  This will create a new file in the `migrations/` directory. Edit the `up` and `down` functions to define your migration logic.
-
-### Example Migration
-
-See `migrations/20250619111651-example-add-field-to-users.js` for a sample migration that adds a field to all users.

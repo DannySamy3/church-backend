@@ -29,28 +29,6 @@ console.log("Environment variables loaded:", {
 
 const app = express();
 
-// Middleware
-app.use(
-  cors({
-    origin: ["https://church-app-dev.netlify.app", "http://localhost:3000"],
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
-    allowedHeaders: [
-      "Content-Type",
-      "Authorization",
-      "X-Requested-With",
-      "Accept",
-      "Origin",
-      "Access-Control-Allow-Origin",
-      "Access-Control-Allow-Headers",
-      "Access-Control-Allow-Methods",
-    ],
-    exposedHeaders: ["Content-Range", "X-Content-Range"],
-    credentials: true,
-    preflightContinue: false,
-    optionsSuccessStatus: 204,
-  })
-);
-
 // CORS configuration
 const corsOptions = {
   origin: true, // Allow all origins

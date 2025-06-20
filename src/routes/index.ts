@@ -26,4 +26,7 @@ router.use(
   require("./member")
 );
 
+// Communion Attendance routes
+router.use("/communion-attendance", require("./communionAttendance"));
+
 export default router;

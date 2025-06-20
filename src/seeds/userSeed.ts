@@ -3,10 +3,10 @@ import { User } from "../models/User";
 import { UserRole } from "../types/roles";
 import dotenv from "dotenv";
 import { faker } from "@faker-js/faker";
+import { Organization } from "../models/Organization";
+import { CommunionAttendance } from "../models/CommunionAttendance";
 
 dotenv.config();
-
-const organizations = ["church1", "church2", "church3"];
 
 // Define the distribution of roles
 const roleDistribution = {
@@ -25,57 +25,62 @@ interface IUserSeed {
   organization: string;
 }
 
-const generateUsers = (totalCount: number): IUserSeed[] => {
+const generateUsersForOrganizations = async (totalCountPerOrg: number) => {
   const users: IUserSeed[] = [];
-
-  // Calculate number of users for each role based on distribution
-  const roleCounts = Object.entries(roleDistribution).reduce(
-    (acc, [role, percentage]) => {
-      acc[role as UserRole] = Math.round(totalCount * percentage);
-      return acc;
-    },
-    {} as Record<UserRole, number>
-  );
-
-  // Adjust total to ensure we get exactly totalCount users
-  const totalAllocated = Object.values(roleCounts).reduce(
-    (sum, count) => sum + count,
-    0
-  );
-  if (totalAllocated !== totalCount) {
-    roleCounts[UserRole.REGULAR] += totalCount - totalAllocated;
-  }
-
-  // Generate users for each role
-  Object.entries(roleCounts).forEach(([role, count]) => {
-    for (let i = 0; i < count; i++) {
-      const firstName = faker.person.firstName();
-      const lastName = faker.person.lastName();
-      const email = faker.internet.email({ firstName, lastName }).toLowerCase();
-      const phoneNumber = faker.phone.number();
-      const organization = faker.helpers.arrayElement(organizations);
-
-      // Generate appropriate password based on role
-      const password = `${role}@${faker.internet.password({ length: 8 })}`;
-
-      users.push({
-        firstName,
-        lastName,
-        email,
-        phoneNumber,
-        password,
-        role: role as UserRole,
-        organization,
-      });
+  const orgs = await Organization.find();
+  for (const org of orgs) {
+    // Calculate number of users for each role based on distribution
+    const roleCounts = Object.entries(roleDistribution).reduce(
+      (acc, [role, percentage]) => {
+        acc[role as UserRole] = Math.round(totalCountPerOrg * percentage);
+        return acc;
+      },
+      {} as Record<UserRole, number>
+    );
+    // Adjust total to ensure we get exactly totalCountPerOrg users
+    const totalAllocated = Object.values(roleCounts).reduce(
+      (sum, count) => sum + count,
+      0
+    );
+    if (totalAllocated !== totalCountPerOrg) {
+      roleCounts[UserRole.REGULAR] += totalCountPerOrg - totalAllocated;
     }
-  });
-
+    let orgUserCount = 0;
+    // Generate users for each role
+    Object.entries(roleCounts).forEach(([role, count]) => {
+      for (let i = 0; i < count; i++) {
+        const firstName = faker.person.firstName();
+        const lastName = faker.person.lastName();
+        // Ensure unique email by appending a random string
+        const email = `${faker.internet
+          .email({ firstName, lastName })
+          .toLowerCase()
+          .replace(/@/, `.${faker.string.alphanumeric(6).toLowerCase()}@`)}`;
+        const phoneNumber = faker.phone.number();
+        // Generate appropriate password based on role
+        const password = `${role}@${faker.internet.password({ length: 8 })}`;
+        users.push({
+          firstName,
+          lastName,
+          email,
+          phoneNumber,
+          password,
+          role: role as UserRole,
+          organization: org.name,
+        });
+        orgUserCount++;
+      }
+    });
+    console.log(
+      `Prepared to add ${orgUserCount} users to organization '${org.name}'`
+    );
+  }
   // Shuffle the array to mix roles
   return faker.helpers.shuffle(users);
 };
 
-// Generate 40 users with mixed roles
-const users = generateUsers(40);
+// Generate users for each real organization
+const USERS_PER_ORG = 20;
 
 export const seedUsers = async () => {
   try {
@@ -83,21 +88,10 @@ export const seedUsers = async () => {
     await mongoose.connect(process.env.MONGODB_URI!);
     console.log("Connected to MongoDB");
 
-    // Clear existing users
+    // Clear existing users, organizations, and communion attendance
     await User.deleteMany({});
-    console.log("Cleared existing users");
-
-    // Insert new users
-    await User.insertMany(users);
-    console.log(`Successfully added ${users.length} new users`);
-
-    // Log role distribution
-    const roleCounts = users.reduce((acc, user) => {
-      acc[user.role] = (acc[user.role] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
-
-    console.log("Role distribution:", roleCounts);
+    await Organization.deleteMany({});
+    await CommunionAttendance.deleteMany({});
 
     // Disconnect from MongoDB
     await mongoose.disconnect();

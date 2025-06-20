@@ -11,6 +11,7 @@ import userRoutes from "./routes/user";
 import moderatorRoutes from "./routes/moderator";
 import lessonRoutes from "./routes/lessons";
 import organizationRoutes from "./routes/organizations";
+import communionAttendanceRoutes from "./routes/communionAttendance";
 
 // Load environment variables with explicit path
 const envPath = path.resolve(process.cwd(), ".env");
@@ -83,8 +84,8 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use(express.json({ limit: "1mb" }));
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
 // Security headers
 const securityHeaders = {
@@ -115,6 +116,12 @@ app.use("/church/organizations", organizationRoutes);
 app.use("/church/users", auth, organizationMiddleware, userRoutes);
 app.use("/church/moderator", auth, organizationMiddleware, moderatorRoutes);
 app.use("/church/lessons", auth, organizationMiddleware, lessonRoutes);
+app.use(
+  "/church/communion-attendance",
+  auth,
+  organizationMiddleware,
+  communionAttendanceRoutes
+);
 
 // Health check endpoint
 app.get("/health", (req: Request, res: Response) => {

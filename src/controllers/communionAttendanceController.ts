@@ -3,6 +3,9 @@ import { CommunionAttendance } from "../models/CommunionAttendance";
 import { User } from "../models/User";
 import mongoose from "mongoose";
 
+const userFieldsToSelect =
+  "firstName middleName lastName email phoneNumber role organization profileImageUrl address member";
+
 // Get all attendance records for the latest date (for this organization)
 export const getLatestAttendanceRecords = async (
   req: Request,
@@ -23,7 +26,10 @@ export const getLatestAttendanceRecords = async (
     const records = await CommunionAttendance.find({
       organization: req.organization,
       scannedAt: { $gte: startOfDay, $lte: endOfDay },
-    }).populate("user organization scannedBy");
+    })
+      // .populate("organization")
+      .populate({ path: "user", select: userFieldsToSelect })
+      .populate({ path: "scannedBy", select: userFieldsToSelect });
     res.json(records);
   } catch (error) {
     res.status(500).json({ error: "Internal server error" });
@@ -44,7 +50,10 @@ export const getAttendanceByDateRange = async (req: Request, res: Response) => {
     const records = await CommunionAttendance.find({
       organization: req.organization,
       scannedAt: { $gte: startDate, $lte: endDate },
-    }).populate("user organization scannedBy");
+    })
+      // .populate("organization")
+      .populate({ path: "user", select: userFieldsToSelect })
+      .populate({ path: "scannedBy", select: userFieldsToSelect });
     res.json(records);
   } catch (error) {
     res.status(500).json({ error: "Internal server error" });
@@ -74,9 +83,11 @@ export const getLatestAttendanceStats = async (req: Request, res: Response) => {
     const records = await CommunionAttendance.find({
       organization: req.organization,
       scannedAt: { $gte: startOfDay, $lte: endOfDay },
-    });
+    }).populate("user");
     // Unique users for the latest event
-    const uniqueUsers = new Set(records.map((r) => r.user.toString()));
+    const uniqueUsers = new Set(
+      records.map((r) => (r.user as any)._id.toString())
+    );
     // Only count users in this organization
     const totalUsers = await User.countDocuments({
       organization: req.organization,

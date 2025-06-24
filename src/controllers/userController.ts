@@ -4,12 +4,14 @@ import { UserRole } from "../types/roles";
 import { generateRandomPassword } from "../utils/passwordGenerator";
 import { sendWelcomeEmail } from "../utils/emailService";
 import { uploadImageToImgur } from "../utils/imgurUpload";
+import { Organization } from "../models/Organization";
 
 export const getAllUsers = async (req: Request, res: Response) => {
   try {
-    const users = await User.find({ organization: req.organization }).select(
-      "-password"
-    );
+    const users = await User.find({
+      organization: req.organization,
+      role: { $ne: UserRole.REGULAR },
+    }).select("-password");
     res.json(users);
   } catch (error) {
     console.error("Error fetching users:", error);
@@ -91,6 +93,7 @@ export const createUser = async (req: Request, res: Response) => {
       phoneNumber,
       role,
       address,
+      member,
     } = req.body;
 
     // Validate role is one of the allowed values
@@ -103,30 +106,43 @@ export const createUser = async (req: Request, res: Response) => {
     }
 
     // Validate required fields based on role
-    if (
-      role === UserRole.REGULAR ||
-      role === UserRole.CLERK ||
-      role === UserRole.INSTRUCTOR
-    ) {
-      if (!firstName || !lastName || !phoneNumber) {
+    if (role === UserRole.REGULAR) {
+      if (!firstName || !lastName || !phoneNumber || member === undefined) {
         return res.status(400).json({
           error: "Missing required fields",
           details:
-            "firstName, lastName, and phoneNumber are required for regular, clerk, and instructor users",
+            "firstName, lastName, phoneNumber, and member are required for regular users",
         });
       }
-      // Check if image is provided for regular, clerk, and instructor users
+      // Regular users do NOT require an image
+    } else if (role === UserRole.CLERK || role === UserRole.INSTRUCTOR) {
+      if (!firstName || !lastName || !phoneNumber || member === undefined) {
+        return res.status(400).json({
+          error: "Missing required fields",
+          details:
+            "firstName, lastName, phoneNumber, and member are required for clerk and instructor users",
+        });
+      }
+      // Check if image is provided for clerk and instructor users
       if (!req.file) {
         return res.status(400).json({
           error: "Missing required field",
-          details: "Profile image is required for the selected role",
+          details:
+            "Profile image is required for the selected role (clerk or instructor)",
         });
       }
     } else {
-      if (!firstName || !lastName || !email || !phoneNumber) {
+      if (
+        !firstName ||
+        !lastName ||
+        !email ||
+        !phoneNumber ||
+        member === undefined
+      ) {
         return res.status(400).json({
           error: "Missing required fields",
-          details: "firstName, lastName, email, and phoneNumber are required",
+          details:
+            "firstName, lastName, email, phoneNumber, and member are required",
         });
       }
     }
@@ -200,6 +216,7 @@ export const createUser = async (req: Request, res: Response) => {
       role: role || UserRole.CLERK,
       organization: req.organization,
       profileImageUrl,
+      member,
     });
 
     await user.save();
@@ -227,6 +244,7 @@ export const createUser = async (req: Request, res: Response) => {
         organization: user.organization,
         address: user.address,
         profileImageUrl: user.profileImageUrl,
+        member: user.member,
       },
     });
   } catch (error) {
@@ -329,11 +347,16 @@ export const changePassword = async (req: Request, res: Response) => {
 
 export const getRegularUsers = async (req: Request, res: Response) => {
   try {
+    const organization = await Organization.findById(req.organization);
+    if (!organization) {
+      return res.status(404).json({ error: "Organization not found" });
+    }
+
     const users = await User.find({
       role: UserRole.REGULAR,
       organization: req.organization,
     }).select("-password");
-    res.json(users);
+    res.json({ users, organizationName: organization.name });
   } catch (error) {
     console.error("Error fetching regular users:", error);
     res.status(500).json({ error: "Internal server error" });

@@ -8,13 +8,6 @@ import { CommunionAttendance } from "../models/CommunionAttendance";
 
 dotenv.config();
 
-// Define the distribution of roles
-const roleDistribution = {
-  [UserRole.ADMIN]: 0.1, // 10% admins
-  [UserRole.CLERK]: 0.3, // 30% clerks
-  [UserRole.REGULAR]: 0.6, // 60% regular users
-};
-
 interface IUserSeed {
   firstName: string;
   lastName: string;
@@ -25,73 +18,46 @@ interface IUserSeed {
   organization: string;
 }
 
-const generateUsersForOrganizations = async (totalCountPerOrg: number) => {
-  const users: IUserSeed[] = [];
-  const orgs = await Organization.find();
-  for (const org of orgs) {
-    // Calculate number of users for each role based on distribution
-    const roleCounts = Object.entries(roleDistribution).reduce(
-      (acc, [role, percentage]) => {
-        acc[role as UserRole] = Math.round(totalCountPerOrg * percentage);
-        return acc;
-      },
-      {} as Record<UserRole, number>
-    );
-    // Adjust total to ensure we get exactly totalCountPerOrg users
-    const totalAllocated = Object.values(roleCounts).reduce(
-      (sum, count) => sum + count,
-      0
-    );
-    if (totalAllocated !== totalCountPerOrg) {
-      roleCounts[UserRole.REGULAR] += totalCountPerOrg - totalAllocated;
-    }
-    let orgUserCount = 0;
-    // Generate users for each role
-    Object.entries(roleCounts).forEach(([role, count]) => {
-      for (let i = 0; i < count; i++) {
-        const firstName = faker.person.firstName();
-        const lastName = faker.person.lastName();
-        // Ensure unique email by appending a random string
-        const email = `${faker.internet
-          .email({ firstName, lastName })
-          .toLowerCase()
-          .replace(/@/, `.${faker.string.alphanumeric(6).toLowerCase()}@`)}`;
-        const phoneNumber = faker.phone.number();
-        // Generate appropriate password based on role
-        const password = `${role}@${faker.internet.password({ length: 8 })}`;
-        users.push({
-          firstName,
-          lastName,
-          email,
-          phoneNumber,
-          password,
-          role: role as UserRole,
-          organization: org.name,
-        });
-        orgUserCount++;
-      }
-    });
-    console.log(
-      `Prepared to add ${orgUserCount} users to organization '${org.name}'`
-    );
-  }
-  // Shuffle the array to mix roles
-  return faker.helpers.shuffle(users);
-};
-
-// Generate users for each real organization
-const USERS_PER_ORG = 20;
-
 export const seedUsers = async () => {
   try {
     // Connect to MongoDB
     await mongoose.connect(process.env.MONGODB_URI!);
     console.log("Connected to MongoDB");
 
-    // Clear existing users, organizations, and communion attendance
-    await User.deleteMany({});
-    await Organization.deleteMany({});
+    // await Organization.deleteMany({});
     await CommunionAttendance.deleteMany({});
+
+    // TODO: Add your organization and user seeding logic here
+    // (Assume organizations and users are seeded at this point)
+
+    // Fetch all organizations
+    const organizations = await Organization.find();
+    for (const org of organizations) {
+      // Find the admin user for this organization
+      const adminUser = await User.findOne({
+        organization: org.name,
+        role: UserRole.ADMIN,
+      });
+      if (!adminUser) {
+        console.warn(
+          `No admin found for organization ${org.name}, skipping communion attendance for this org.`
+        );
+        continue;
+      }
+      // Find all users in this organization
+      const users = await User.find({ organization: org.name });
+      for (const user of users) {
+        await CommunionAttendance.create({
+          user: user._id,
+          organization: org._id,
+          scannedBy: adminUser._id,
+          scannedAt: new Date(), // or random date if desired
+        });
+      }
+      console.log(
+        `Seeded communion attendance for all users in organization '${org.name}'`
+      );
+    }
 
     // Disconnect from MongoDB
     await mongoose.disconnect();

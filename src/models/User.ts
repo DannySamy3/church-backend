@@ -13,6 +13,7 @@ export interface IUser extends Document {
   organization: string;
   profileImageUrl?: string;
   address?: string;
+  member: boolean;
   comparePassword(candidatePassword: string): Promise<boolean>;
 }
 
@@ -70,6 +71,10 @@ const userSchema = new Schema<IUser>(
     address: {
       type: String,
       trim: true,
+    },
+    member: {
+      type: Boolean,
+      required: true,
     },
   },
   {

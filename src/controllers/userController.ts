@@ -5,6 +5,7 @@ import { generateRandomPassword } from "../utils/passwordGenerator";
 import { sendWelcomeEmail } from "../utils/emailService";
 import { uploadImageToImgur } from "../utils/imgurUpload";
 import { Organization } from "../models/Organization";
+import { CommunionAttendance } from "../models/CommunionAttendance";
 
 export const getAllUsers = async (req: Request, res: Response) => {
   try {
@@ -106,29 +107,24 @@ export const createUser = async (req: Request, res: Response) => {
     }
 
     // Validate required fields based on role
-    if (role === UserRole.REGULAR) {
+    if (
+      role === UserRole.REGULAR ||
+      role === UserRole.CLERK ||
+      role === UserRole.INSTRUCTOR
+    ) {
       if (!firstName || !lastName || !phoneNumber || member === undefined) {
         return res.status(400).json({
           error: "Missing required fields",
           details:
-            "firstName, lastName, phoneNumber, and member are required for regular users",
+            "firstName, lastName, phoneNumber, and member are required for regular, clerk, and instructor users",
         });
       }
-      // Regular users do NOT require an image
-    } else if (role === UserRole.CLERK || role === UserRole.INSTRUCTOR) {
-      if (!firstName || !lastName || !phoneNumber || member === undefined) {
-        return res.status(400).json({
-          error: "Missing required fields",
-          details:
-            "firstName, lastName, phoneNumber, and member are required for clerk and instructor users",
-        });
-      }
-      // Check if image is provided for clerk and instructor users
+      // Check if image is provided for regular, clerk, and instructor users
       if (!req.file) {
         return res.status(400).json({
           error: "Missing required field",
           details:
-            "Profile image is required for the selected role (clerk or instructor)",
+            "Profile image is required for the selected role (regular, clerk, or instructor)",
         });
       }
     } else {
@@ -369,6 +365,92 @@ export const getAllRoles = async (req: Request, res: Response) => {
     res.json(roles);
   } catch (error) {
     console.error("Error fetching roles:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+export const addScanUser = async (req: Request, res: Response) => {
+  try {
+    const {
+      firstName,
+      middleName,
+      lastName,
+      email,
+      phoneNumber,
+      address,
+      member,
+    } = req.body;
+
+    // Validate required fields
+    if (!firstName || !lastName || !phoneNumber || member === undefined) {
+      return res.status(400).json({
+        error: "Missing required fields",
+        details: "firstName, lastName, phoneNumber, and member are required.",
+      });
+    }
+
+    // Check if user already exists (only if email is provided)
+    if (email) {
+      const existingUser = await User.findOne({ email });
+      if (existingUser) {
+        return res
+          .status(400)
+          .json({ error: "User with this email already exists" });
+      }
+    }
+
+    // Handle image upload (optional)
+    let profileImageUrl;
+    if (req.file) {
+      profileImageUrl = await uploadImageToImgur(req.file);
+      if (!profileImageUrl) {
+        // Log a warning but don't fail the request
+        console.warn("Image file was provided but failed to upload to Imgur.");
+      }
+    }
+
+    // Create new user with REGULAR role
+    const user = new User({
+      firstName,
+      middleName,
+      lastName,
+      email,
+      phoneNumber,
+      address,
+      role: UserRole.REGULAR, // Hardcoded to REGULAR
+      organization: req.organization,
+      profileImageUrl,
+      member,
+    });
+
+    await user.save();
+
+    // Add user to communion attendance
+    const attendanceRecord = new CommunionAttendance({
+      user: user._id,
+      organization: req.organization,
+      scannedBy: req.user?._id, // The user performing the scan
+      scannedAt: new Date(),
+    });
+
+    await attendanceRecord.save();
+
+    res.status(201).json({
+      message: "User created and attendance recorded successfully",
+      user: {
+        id: user._id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        role: user.role,
+        organization: user.organization,
+        address: user.address,
+        profileImageUrl: user.profileImageUrl,
+        member: user.member,
+      },
+    });
+  } catch (error) {
+    console.error("Error creating scan user:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 };

@@ -9,6 +9,7 @@ import {
   getProfile,
   changePassword,
   getRegularUsers,
+  addScanUser,
 } from "../controllers/userController";
 
 const router = express.Router();
@@ -27,6 +28,9 @@ router.get("/:userId", getUserById);
 
 // Create new user with image upload
 router.post("/", upload.single("profileImage"), createUser);
+
+// Add a new user via scan (optional image)
+router.post("/scan", upload.single("profileImage"), addScanUser);
 
 // Delete user
 router.delete("/:userId", deleteUser);

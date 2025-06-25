@@ -20,9 +20,9 @@ export const getLatestAttendanceRecords = async (
     const latestDate = latestRecord.scannedAt;
     // Get all records for that date (same day) and organization
     const startOfDay = new Date(latestDate);
-    startOfDay.setHours(0, 0, 0, 0);
+    startOfDay.setUTCHours(0, 0, 0, 0);
     const endOfDay = new Date(latestDate);
-    endOfDay.setHours(23, 59, 59, 999);
+    endOfDay.setUTCHours(23, 59, 59, 999);
     const records = await CommunionAttendance.find({
       organization: req.organization,
       scannedAt: { $gte: startOfDay, $lte: endOfDay },

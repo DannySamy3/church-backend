@@ -169,6 +169,14 @@ export const createUser = async (req: Request, res: Response) => {
       }
     }
 
+    // Check if a user with the same phone number already exists
+    const existingUserByPhone = await User.findOne({ phoneNumber });
+    if (existingUserByPhone) {
+      return res
+        .status(400)
+        .json({ error: "User with this phone number already exists" });
+    }
+
     // Check if this is the first user in the system
     const userCount = await User.countDocuments();
     const isFirstUser = userCount === 0;
@@ -431,6 +439,14 @@ export const addScanUser = async (req: Request, res: Response) => {
           .status(400)
           .json({ error: "User with this email already exists" });
       }
+    }
+
+    // Check if a user with the same phone number already exists
+    const existingUserByPhone = await User.findOne({ phoneNumber });
+    if (existingUserByPhone) {
+      return res
+        .status(400)
+        .json({ error: "User with this phone number already exists" });
     }
 
     // Handle image upload (optional)

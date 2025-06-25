@@ -84,20 +84,20 @@ export const getLatestAttendanceStats = async (req: Request, res: Response) => {
       organization: req.organization,
       scannedAt: { $gte: startOfDay, $lte: endOfDay },
     }).populate("user");
-    // Unique users for the latest event
-    const uniqueUsers = new Set(
-      records.map((r) => (r.user as any)._id.toString())
+    // All unique scanned users
+    const allUniqueScannedUsers = new Set(
+      records.map((r) => (r.user as any)?._id.toString())
     );
-    // Only count users in this organization
+    // Total users in this organization
     const totalUsers = await User.countDocuments({
       organization: req.organization,
     });
     const attendanceRate =
-      totalUsers > 0 ? (uniqueUsers.size / totalUsers) * 100 : 0;
+      totalUsers > 0 ? (allUniqueScannedUsers.size / totalUsers) * 100 : 0;
     res.json({
       attendanceRate: attendanceRate.toFixed(2),
       lastScanDate: latestDate,
-      totalParticipants: uniqueUsers.size,
+      totalParticipants: allUniqueScannedUsers.size,
     });
   } catch (error) {
     res.status(500).json({ error: "Internal server error" });

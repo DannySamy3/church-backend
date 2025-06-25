@@ -13,6 +13,7 @@ export const register = async (req: Request, res: Response) => {
       phoneNumber,
       password,
       organization,
+      gender,
     } = req.body;
 
     // Validate required fields
@@ -22,12 +23,13 @@ export const register = async (req: Request, res: Response) => {
       !email ||
       !phoneNumber ||
       !password ||
-      !organization
+      !organization ||
+      !gender
     ) {
       return res.status(400).json({
         error: "Missing required fields",
         details:
-          "firstName, lastName, email, phoneNumber, password, and organization are required",
+          "firstName, lastName, email, phoneNumber, password, organization, and gender are required",
       });
     }
 
@@ -59,6 +61,7 @@ export const register = async (req: Request, res: Response) => {
       password,
       role: UserRole.ADMIN,
       organization,
+      gender,
     });
 
     await user.save();
@@ -85,6 +88,7 @@ export const register = async (req: Request, res: Response) => {
         phoneNumber: user.phoneNumber,
         role: user.role,
         organization: user.organization,
+        gender: user.gender,
       },
       token,
     });

@@ -95,6 +95,7 @@ export const createUser = async (req: Request, res: Response) => {
       role,
       address,
       member,
+      gender,
     } = req.body;
 
     // Validate role is one of the allowed values
@@ -112,11 +113,17 @@ export const createUser = async (req: Request, res: Response) => {
       role === UserRole.CLERK ||
       role === UserRole.INSTRUCTOR
     ) {
-      if (!firstName || !lastName || !phoneNumber || member === undefined) {
+      if (
+        !firstName ||
+        !lastName ||
+        !phoneNumber ||
+        member === undefined ||
+        !gender
+      ) {
         return res.status(400).json({
           error: "Missing required fields",
           details:
-            "firstName, lastName, phoneNumber, and member are required for regular, clerk, and instructor users",
+            "firstName, lastName, phoneNumber, member, and gender are required for regular, clerk, and instructor users",
         });
       }
       // Check if image is provided for regular, clerk, and instructor users
@@ -133,14 +140,23 @@ export const createUser = async (req: Request, res: Response) => {
         !lastName ||
         !email ||
         !phoneNumber ||
-        member === undefined
+        member === undefined ||
+        !gender
       ) {
         return res.status(400).json({
           error: "Missing required fields",
           details:
-            "firstName, lastName, email, phoneNumber, and member are required",
+            "firstName, lastName, email, phoneNumber, member, and gender are required",
         });
       }
+    }
+
+    // Validate gender
+    if (!["male", "female"].includes(gender)) {
+      return res.status(400).json({
+        error: "Invalid gender",
+        details: "Gender must be either 'male' or 'female'",
+      });
     }
 
     // Check if user already exists (only if email is provided)
@@ -213,6 +229,7 @@ export const createUser = async (req: Request, res: Response) => {
       organization: req.organization,
       profileImageUrl,
       member,
+      gender,
     });
 
     await user.save();
@@ -241,6 +258,7 @@ export const createUser = async (req: Request, res: Response) => {
         address: user.address,
         profileImageUrl: user.profileImageUrl,
         member: user.member,
+        gender: user.gender,
       },
     });
   } catch (error) {
@@ -379,13 +397,29 @@ export const addScanUser = async (req: Request, res: Response) => {
       phoneNumber,
       address,
       member,
+      gender,
     } = req.body;
 
     // Validate required fields
-    if (!firstName || !lastName || !phoneNumber || member === undefined) {
+    if (
+      !firstName ||
+      !lastName ||
+      !phoneNumber ||
+      member === undefined ||
+      !gender
+    ) {
       return res.status(400).json({
         error: "Missing required fields",
-        details: "firstName, lastName, phoneNumber, and member are required.",
+        details:
+          "firstName, lastName, phoneNumber, member, and gender are required.",
+      });
+    }
+
+    // Validate gender
+    if (!["male", "female"].includes(gender)) {
+      return res.status(400).json({
+        error: "Invalid gender",
+        details: "Gender must be either 'male' or 'female'",
       });
     }
 
@@ -409,6 +443,29 @@ export const addScanUser = async (req: Request, res: Response) => {
       }
     }
 
+    // --- Ensure admin is recorded in CommunionAttendance for today ---
+    if (req.user?._id) {
+      const startOfDay = new Date();
+      startOfDay.setHours(0, 0, 0, 0);
+      const endOfDay = new Date();
+      endOfDay.setHours(23, 59, 59, 999);
+      const adminAttendance = await CommunionAttendance.findOne({
+        user: req.user._id,
+        organization: req.organization,
+        scannedAt: { $gte: startOfDay, $lte: endOfDay },
+      });
+      if (!adminAttendance) {
+        const adminRecord = new CommunionAttendance({
+          user: req.user._id,
+          organization: req.organization,
+          scannedBy: req.user._id,
+          scannedAt: new Date(),
+        });
+        await adminRecord.save();
+      }
+    }
+    // --- End admin attendance logic ---
+
     // Create new user with REGULAR role
     const user = new User({
       firstName,
@@ -421,6 +478,7 @@ export const addScanUser = async (req: Request, res: Response) => {
       organization: req.organization,
       profileImageUrl,
       member,
+      gender,
     });
 
     await user.save();
@@ -447,6 +505,7 @@ export const addScanUser = async (req: Request, res: Response) => {
         address: user.address,
         profileImageUrl: user.profileImageUrl,
         member: user.member,
+        gender: user.gender,
       },
     });
   } catch (error) {

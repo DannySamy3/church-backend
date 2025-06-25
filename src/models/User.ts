@@ -14,6 +14,7 @@ export interface IUser extends Document {
   profileImageUrl?: string;
   address?: string;
   member: boolean;
+  gender: "male" | "female";
   comparePassword(candidatePassword: string): Promise<boolean>;
 }
 
@@ -75,6 +76,12 @@ const userSchema = new Schema<IUser>(
     member: {
       type: Boolean,
       required: true,
+    },
+    gender: {
+      type: String,
+      required: true,
+      enum: ["male", "female"],
+      trim: true,
     },
   },
   {

@@ -14,6 +14,7 @@ export const register = async (req: Request, res: Response) => {
       password,
       organization,
       gender,
+      member,
     } = req.body;
 
     // Validate required fields
@@ -62,6 +63,7 @@ export const register = async (req: Request, res: Response) => {
       role: UserRole.ADMIN,
       organization,
       gender,
+      member,
     });
 
     await user.save();
@@ -89,6 +91,7 @@ export const register = async (req: Request, res: Response) => {
         role: user.role,
         organization: user.organization,
         gender: user.gender,
+        member: user.member,
       },
       token,
     });
@@ -96,7 +99,7 @@ export const register = async (req: Request, res: Response) => {
     console.error("Registration error:", error);
     res.status(500).json({
       error: "Server Error",
-      details: "Unable to create account. Please try again later.",
+      details: error instanceof Error ? error.message : String(error),
     });
   }
 };
@@ -150,6 +153,8 @@ export const login = async (req: Request, res: Response) => {
         phoneNumber: user.phoneNumber,
         role: user.role,
         organization: user.organization,
+        gender: user.gender,
+        member: user.member,
       },
       token,
     });
@@ -157,7 +162,7 @@ export const login = async (req: Request, res: Response) => {
     console.error("Login error:", error);
     res.status(500).json({
       error: "Server Error",
-      details: "Unable to log in. Please try again later.",
+      details: error instanceof Error ? error.message : String(error),
     });
   }
 };

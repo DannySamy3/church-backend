@@ -413,6 +413,7 @@ export const addScanUser = async (req: Request, res: Response) => {
       !firstName ||
       !lastName ||
       !phoneNumber ||
+      !middleName ||
       member === undefined ||
       !gender
     ) {

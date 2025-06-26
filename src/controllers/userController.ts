@@ -419,8 +419,7 @@ export const addScanUser = async (req: Request, res: Response) => {
     ) {
       return res.status(400).json({
         error: "Missing required fields",
-        details:
-          "firstName, lastName, phoneNumber, member, and gender are required.",
+        details: "All 3 names, phoneNumber, and gender are required.",
       });
     }
 

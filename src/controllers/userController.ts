@@ -536,7 +536,7 @@ export const addScanUser = async (req: Request, res: Response) => {
     const attendanceRecord = new CommunionAttendance({
       user: user._id,
       organization: req.organization,
-      scannedBy: req.user?._id, // This is  The user performing the scan
+      scannedBy: req.user?._id, //  The user performing the scan
       scannedAt: new Date(),
     });
 

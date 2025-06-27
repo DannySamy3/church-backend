@@ -426,7 +426,17 @@ export const addScanUser = async (req: Request, res: Response) => {
       address,
       member,
       gender,
+      role, // in case someone tries to send a role
     } = req.body;
+
+    // Only allow REGULAR role
+    if (role && role !== UserRole.REGULAR) {
+      return res.status(400).json({
+        error: "Invalid role",
+        details:
+          "Only users with REGULAR role can be created via this endpoint.",
+      });
+    }
 
     // Validate required fields
     if (
@@ -451,8 +461,8 @@ export const addScanUser = async (req: Request, res: Response) => {
       });
     }
 
-    // Check if user already exists (only if email is provided)
-    if (email) {
+    // Check if user already exists (only if email is provided and non-empty)
+    if (email && email.trim() !== "") {
       const existingUser = await User.findOne({ email });
       if (existingUser) {
         return res
@@ -502,12 +512,11 @@ export const addScanUser = async (req: Request, res: Response) => {
     }
     // --- End admin attendance logic ---
 
-    // Create new user with REGULAR role
-    const user = new User({
+    // Create new user with REGULAR role, only set email if provided and non-empty
+    const userData: any = {
       firstName,
       middleName,
       lastName,
-      email: email && email.trim() !== "" ? email : undefined,
       phoneNumber,
       address,
       role: UserRole.REGULAR, // Hardcoded to REGULAR
@@ -515,8 +524,12 @@ export const addScanUser = async (req: Request, res: Response) => {
       profileImageUrl,
       member,
       gender,
-    });
+    };
+    if (email && email.trim() !== "") {
+      userData.email = email;
+    }
 
+    const user = new User(userData);
     await user.save();
 
     // Add user to communion attendance

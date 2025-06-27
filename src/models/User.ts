@@ -40,6 +40,7 @@ const userSchema = new Schema<IUser>(
         return this.role !== UserRole.REGULAR;
       },
       unique: true,
+      sparse: true,
       trim: true,
       lowercase: true,
     },

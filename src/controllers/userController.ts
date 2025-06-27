@@ -16,7 +16,10 @@ export const getAllUsers = async (req: Request, res: Response) => {
     res.json(users);
   } catch (error) {
     console.error("Error fetching users:", error);
-    res.status(500).json({ error: "Internal server error" });
+    res.status(500).json({
+      error: "Internal server error",
+      details: error instanceof Error ? error.message : String(error),
+    });
   }
 };
 
@@ -59,7 +62,10 @@ export const updateUserRole = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error("Error updating user role:", error);
-    res.status(500).json({ error: "Internal server error" });
+    res.status(500).json({
+      error: "Internal server error",
+      details: error instanceof Error ? error.message : String(error),
+    });
   }
 };
 
@@ -80,7 +86,10 @@ export const deleteUser = async (req: Request, res: Response) => {
     res.json({ message: "User deleted successfully" });
   } catch (error) {
     console.error("Error deleting user:", error);
-    res.status(500).json({ error: "Internal server error" });
+    res.status(500).json({
+      error: "Internal server error",
+      details: error instanceof Error ? error.message : String(error),
+    });
   }
 };
 
@@ -271,7 +280,10 @@ export const createUser = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error("Error creating user:", error);
-    res.status(500).json({ error: "Internal server error" });
+    res.status(500).json({
+      error: "Internal server error",
+      details: error instanceof Error ? error.message : String(error),
+    });
   }
 };
 
@@ -290,7 +302,10 @@ export const getUserById = async (req: Request, res: Response) => {
     res.json(user);
   } catch (error) {
     console.error("Error fetching user:", error);
-    res.status(500).json({ error: "Internal server error" });
+    res.status(500).json({
+      error: "Internal server error",
+      details: error instanceof Error ? error.message : String(error),
+    });
   }
 };
 
@@ -360,9 +375,8 @@ export const changePassword = async (req: Request, res: Response) => {
   } catch (error) {
     console.error("Error changing password:", error);
     res.status(500).json({
-      error: "Password change failed",
-      details:
-        "An unexpected error occurred while changing your password. Please try again later or contact support if the problem persists.",
+      error: "Internal server error",
+      details: error instanceof Error ? error.message : String(error),
     });
   }
 };
@@ -381,7 +395,10 @@ export const getRegularUsers = async (req: Request, res: Response) => {
     res.json({ users, organizationName: organization.name });
   } catch (error) {
     console.error("Error fetching regular users:", error);
-    res.status(500).json({ error: "Internal server error" });
+    res.status(500).json({
+      error: "Internal server error",
+      details: error instanceof Error ? error.message : String(error),
+    });
   }
 };
 
@@ -391,7 +408,10 @@ export const getAllRoles = async (req: Request, res: Response) => {
     res.json(roles);
   } catch (error) {
     console.error("Error fetching roles:", error);
-    res.status(500).json({ error: "Internal server error" });
+    res.status(500).json({
+      error: "Internal server error",
+      details: error instanceof Error ? error.message : String(error),
+    });
   }
 };
 
@@ -526,6 +546,9 @@ export const addScanUser = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error("Error creating scan user:", error);
-    res.status(500).json({ error: "Internal server error" });
+    res.status(500).json({
+      error: "Internal server error",
+      details: error instanceof Error ? error.message : String(error),
+    });
   }
 };

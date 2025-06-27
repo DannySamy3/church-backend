@@ -20,6 +20,9 @@ router.get("/", getAllUsers);
 // Get profile (must be before :userId)
 router.get("/profile", getProfile);
 
+// Change password
+router.post("/change-password", changePassword);
+
 // Get regular users (must be before :userId)
 router.get("/regular", getRegularUsers);
 

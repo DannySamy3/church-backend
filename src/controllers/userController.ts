@@ -487,7 +487,7 @@ export const addScanUser = async (req: Request, res: Response) => {
       firstName,
       middleName,
       lastName,
-      email,
+      email: email && email.trim() !== "" ? email : undefined,
       phoneNumber,
       address,
       role: UserRole.REGULAR, // Hardcoded to REGULAR

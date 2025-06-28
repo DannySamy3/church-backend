@@ -429,6 +429,12 @@ export const addScanUser = async (req: Request, res: Response) => {
       role, // in case someone tries to send a role
     } = req.body;
 
+    // Debug logging
+    console.log("Request body email:", email);
+    console.log("Email type:", typeof email);
+    console.log("Email === null:", email === null);
+    console.log("Email === undefined:", email === undefined);
+
     // Only allow REGULAR role
     if (role && role !== UserRole.REGULAR) {
       return res.status(400).json({
@@ -525,9 +531,18 @@ export const addScanUser = async (req: Request, res: Response) => {
       member,
       gender,
     };
+
+    // Debug logging for userData
+    console.log("userData before email check:", userData);
+
     if (email && email.trim() !== "") {
       userData.email = email;
+      console.log("Email added to userData:", userData.email);
+    } else {
+      console.log("Email not added to userData - field will be omitted");
     }
+
+    console.log("Final userData:", userData);
 
     const user = new User(userData);
     await user.save();

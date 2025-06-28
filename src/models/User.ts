@@ -6,7 +6,7 @@ export interface IUser extends Document {
   firstName: string;
   middleName?: string;
   lastName: string;
-  email: string;
+  email?: string;
   phoneNumber: string;
   password: string;
   role: UserRole;
@@ -39,8 +39,7 @@ const userSchema = new Schema<IUser>(
       required: function (this: IUser) {
         return this.role !== UserRole.REGULAR;
       },
-      unique: true,
-      sparse: true,
+      
       trim: true,
       lowercase: true,
     },
@@ -51,7 +50,7 @@ const userSchema = new Schema<IUser>(
     },
     password: {
       type: String,
-      required: function (this: IUser) {
+      required: function () {
         return this.role !== UserRole.REGULAR;
       },
       minlength: 6,

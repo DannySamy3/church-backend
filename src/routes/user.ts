@@ -2,7 +2,7 @@ import express from "express";
 import { upload } from "../middleware/upload";
 import {
   getAllUsers,
-  // updateUserRole,
+  // updateUserRole
   deleteUser,
   createUser,
   getUserById,

@@ -253,10 +253,18 @@ export const createUser = async (req: Request, res: Response) => {
 
     // Send welcome email with credentials only for non-regular users
     if (email && role !== UserRole.REGULAR && generatedPassword) {
+      let organizationName = "Kanisa";
+      if (req.organization) {
+        const org = await Organization.findById(req.organization);
+        if (org && org.name) {
+          organizationName = org.name;
+        }
+      }
       const emailSent = await sendWelcomeEmail(
         email,
         firstName,
-        generatedPassword
+        generatedPassword,
+        organizationName
       );
       if (!emailSent) {
         console.warn(`Failed to send welcome email to ${email}`);

@@ -46,20 +46,20 @@ transporter.verify(function (error, success) {
 export const sendWelcomeEmail = async (
   email: string,
   firstName: string,
-  password: string
+  password: string,
+  organizationName: string
 ) => {
   const mailOptions = {
     from: `"Church App Support" <${process.env.SMTP_FROM}>`,
     to: email,
-    subject: "Welcome to SDA Church App - Your Account Details",
+    subject: `Karibu kwenye ${organizationName} - Taarifa za Akaunti Yako`,
     html: `
-      <h1>Welcome to UBH, ${firstName}!</h1>
-      <p>Your account has been created successfully.</p>
-      <p>Here are your login credentials:</p>
-      <p><strong>Email:</strong> ${email}</p>
-      <p><strong>Password:</strong> ${password}</p>
-    
-      <p>Best regards,<br>The SDA Church App Team</p>
+      <h1>Karibu ${organizationName}, ${firstName}!</h1>
+      <p>Akaunti yako imeundwa kikamilifu.</p>
+      <p>Hizi ndizo taarifa zako za kuingia:</p>
+      <p><strong>Barua pepe:</strong> ${email}</p>
+      <p><strong>Nenosiri:</strong> ${password}</p>
+      <p>Kwa heri,<br>Timu ya SDA Church App</p>
     `,
   };
 

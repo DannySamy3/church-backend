@@ -7,8 +7,8 @@ services:
       - "8000:8000"
     environment:
       # For Linux, use 172.17.0.1 as the Docker host gateway
-      # - MONGODB_URI=mongodb://local_mongo:27017/church-app
-      - MONGODB_URI=mongodb://admin:secret@45.9.190.68:27017/church-app?authSource=admin
+      - MONGODB_URI=mongodb://local_mongo:27017/church-app
+      # - MONGODB_URI=mongodb://admin:secret@45.9.190.68:27017/church-app?authSource=admin
 
 
 

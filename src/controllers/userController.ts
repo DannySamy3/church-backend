@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { User } from "../models/User";
+import { Class } from "../models/Class";
 import { UserRole } from "../types/roles";
 import { generateRandomPassword } from "../utils/passwordGenerator";
 import { sendWelcomeEmail } from "../utils/emailService";
@@ -105,6 +106,7 @@ export const createUser = async (req: Request, res: Response) => {
       address,
       member,
       gender,
+      classId, // For instructor role
     } = req.body;
 
     // Validate role is one of the allowed values
@@ -135,6 +137,50 @@ export const createUser = async (req: Request, res: Response) => {
             "firstName, lastName, phoneNumber, member, and gender are required for regular, clerk, and instructor users",
         });
       }
+      
+      // Additional validation for instructor role
+      if (role === UserRole.INSTRUCTOR) {
+        if (!classId) {
+          return res.status(400).json({
+            error: "Missing required field",
+            details: "classId is required when creating an instructor",
+          });
+        }
+        
+        // Validate that the class exists and belongs to the organization
+        const classRecord = await Class.findOne({
+          _id: classId,
+          organization: req.organization,
+        });
+        
+        if (!classRecord) {
+          return res.status(404).json({
+            error: "Class not found",
+            details: "The specified class does not exist or does not belong to this organization",
+          });
+        }
+        
+        // Check if the class already has an instructor
+        const existingInstructor = await User.findOne({
+          role: UserRole.INSTRUCTOR,
+          organization: req.organization,
+        });
+        
+        if (existingInstructor) {
+          const instructorClass = await Class.findOne({
+            instructor: existingInstructor._id,
+            organization: req.organization,
+          });
+          
+          if (instructorClass && instructorClass._id.toString() === classId) {
+            return res.status(400).json({
+              error: "Class already has an instructor",
+              details: "This class is already assigned to another instructor",
+            });
+          }
+        }
+      }
+      
       // Check if image is provided for regular, clerk, and instructor users
       if (!req.file) {
         return res.status(400).json({
@@ -250,6 +296,13 @@ export const createUser = async (req: Request, res: Response) => {
     });
 
     await user.save();
+
+    // If user is an instructor, update the class to associate with this instructor
+    if (role === UserRole.INSTRUCTOR && classId) {
+      await Class.findByIdAndUpdate(classId, {
+        instructor: user._id,
+      });
+    }
 
     // Send welcome email with credentials only for non-regular users
     if (email && role !== UserRole.REGULAR && generatedPassword) {

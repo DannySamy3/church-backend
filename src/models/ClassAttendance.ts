@@ -1,8 +1,8 @@
 import mongoose, { Document, Schema } from "mongoose";
-import { IClassMember } from "./ClassMember";
+import { IClass } from "./Class";
 
 export interface IClassAttendance extends Document {
-  classMember: IClassMember["_id"];
+  class: IClass["_id"];
   date: Date;
   
   // A: Huduma yangu kwa Yesu (My Service to Jesus)
@@ -29,9 +29,9 @@ export interface IClassAttendance extends Document {
 
 const classAttendanceSchema = new Schema<IClassAttendance>(
   {
-    classMember: {
+    class: {
       type: Schema.Types.ObjectId,
-      ref: "ClassMember",
+      ref: "Class",
       required: true,
     },
     date: {

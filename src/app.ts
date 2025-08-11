@@ -13,7 +13,7 @@ import lessonRoutes from "./routes/lessons";
 import organizationRoutes from "./routes/organizations";
 import communionAttendanceRoutes from "./routes/communionAttendance";
 import attendanceRoutes from "./routes/attendance";
-import classAttendanceRoutes from "./routes/classAttendance";
+import classRoutes from "./routes/classes";
 
 // Load environment variables with explicit path
 const envPath = path.resolve(process.cwd(), ".env");
@@ -111,10 +111,10 @@ app.use(
 );
 
 app.use(
-  "/church/class-attendance",
+  "/church/classes",
   auth,
   organizationMiddleware,
-  classAttendanceRoutes
+  classRoutes
 );
 
 // Health check endpoint

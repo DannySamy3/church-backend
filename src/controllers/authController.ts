@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { User } from "../models/User";
+import { Class } from "../models/Class";
 import jwt from "jsonwebtoken";
 import { UserRole } from "../types/roles";
 
@@ -142,20 +143,38 @@ export const login = async (req: Request, res: Response) => {
 
     console.log("Login successful for user:", user._id);
 
+    // Prepare user response object
+    const userResponse: any = {
+      id: user._id,
+      firstName: user.firstName,
+      middleName: user.middleName,
+      lastName: user.lastName,
+      email: user.email,
+      phoneNumber: user.phoneNumber,
+      role: user.role,
+      organization: user.organization,
+      gender: user.gender,
+      member: user.member,
+    };
+
+    // If user is an instructor, get their associated class information
+    if (user.role === UserRole.INSTRUCTOR) {
+      const instructorClass = await Class.findOne({
+        instructor: user._id,
+        organization: user.organization,
+      });
+
+      if (instructorClass) {
+        userResponse.class = {
+          id: instructorClass._id,
+          name: instructorClass.name,
+        };
+      }
+    }
+
     res.status(200).json({
       message: "Login successful",
-      user: {
-        id: user._id,
-        firstName: user.firstName,
-        middleName: user.middleName,
-        lastName: user.lastName,
-        email: user.email,
-        phoneNumber: user.phoneNumber,
-        role: user.role,
-        organization: user.organization,
-        gender: user.gender,
-        member: user.member,
-      },
+      user: userResponse,
       token,
     });
   } catch (error) {

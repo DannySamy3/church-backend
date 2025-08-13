@@ -1,3 +1,51 @@
+
+# version: "3.8"
+
+# services:
+#   app:
+#     build: .
+#     ports:
+#       - "8000:8000"
+#     environment:
+#       - MONGODB_URI=mongodb://admin:Zinc%40100%25@45.9.190.68:27017/church-app?authSource=admin
+#       - NODE_ENV=production
+#     depends_on:
+#       - mongo
+#     restart: unless-stopped
+#     networks:
+#       - church_net
+
+#   mongo:
+#     image: mongo:6.0
+#     container_name: local_mongo
+#     restart: unless-stopped
+#     ports:
+#       - "27017:27017"  # exposes MongoDB to VM network (your PC can access via 45.9.190.68:27017)
+#     environment:
+#       MONGO_INITDB_ROOT_USERNAME: admin
+#       MONGO_INITDB_ROOT_PASSWORD: 'Zinc@100%'
+#       MONGO_INITDB_DATABASE: church-app
+#     volumes:
+#       - mongo_data:/data/db
+#     networks:
+#       - church_net
+
+# volumes:
+#   mongo_data:
+
+# networks:
+#   church_net:
+#     driver: bridge
+
+
+
+
+
+
+
+
+
+### Server                                                                                     docker-compose.yml                                                                                              
 version: "3.8"
 
 services:
@@ -6,33 +54,33 @@ services:
     ports:
       - "8000:8000"
     environment:
-      # For Linux, use 172.17.0.1 as the Docker host gateway
-      - MONGODB_URI=mongodb://local_mongo:27017/church-app
-      # - MONGODB_URI=mongodb://admin:secret@45.9.190.68:27017/church-app?authSource=admin
+      - MONGODB_URI=mongodb://admin:Zinc%40100%25@mongo:27017/church-app?authSource=admin
 
-
-
-    
       - NODE_ENV=production
+    depends_on:
+      - mongo
     restart: unless-stopped
-    
+    networks:
+      - church_net
 
+  mongo:
+    image: mongo:6.0
+    container_name: local_mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: 'Zinc@100%'
+      MONGO_INITDB_DATABASE: church-app
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - church_net
 
-##Server                                                  docker-compose.yml                                                                                              
-# version: "3.8"
+volumes:
+  mongo_data:
 
-# networks:
-#   haunted_net:
-#     external: true
-
-# services:
-#   app:
-#     build: .
-#     ports:
-#       - "8000:8000"
-#     environment:
-#       - MONGODB_URI=mongodb://local_mongo:27017/church-app
-#       - NODE_ENV=production
-#     restart: unless-stopped
-#     networks:
-#       - haunted_net
+networks:
+  church_net:
+    driver: bridge

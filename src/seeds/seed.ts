@@ -26,7 +26,7 @@ const seed = async () => {
  
     await Class.deleteMany({});
     await ClassMember.deleteMany({});
-    console.log("Cleared all regular users, communion attendance, classes, and class members data");
+    console.log("Cleared all classes and class members data");
 
     const organization = await Organization.findOne();
     if (!organization) {
@@ -159,18 +159,47 @@ const seed = async () => {
     const createdClasses = await Class.insertMany(classes);
     console.log(`Created ${createdClasses.length} classes`);
 
-    // Create class members using the regular users
-    const classMembers = [];
-    for (const user of createdUsers) {
-      // Randomly assign users to 1-3 classes
-      const numClasses = faker.number.int({ min: 1, max: 3 });
-      const selectedClasses = faker.helpers.arrayElements(createdClasses, numClasses);
+    // Create regular users (students) first
+    const regularUsers = [];
+    const totalStudentsNeeded = classNames.length * 15; // Max students per class
+    
+    for (let i = 0; i < totalStudentsNeeded; i++) {
+      const gender = faker.person.sexType();
+      const firstName = faker.helpers.arrayElement(swahiliFirstNames[gender]);
+      const lastName = faker.helpers.arrayElement(swahiliLastNames);
+      const middleName = faker.helpers.arrayElement(swahiliFirstNames[gender]);
       
-      for (const classItem of selectedClasses) {
+      const user = {
+        firstName,
+        middleName,
+        lastName,
+        email: faker.helpers.maybe(() => faker.internet.email({ firstName, lastName }), { probability: 0.8 }),
+        phoneNumber: `+255${faker.string.numeric(9)}`,
+        password: faker.internet.password(),
+        role: 'regular',
+        organization: organization._id,
+        member: faker.datatype.boolean(),
+        gender,
+      };
+      regularUsers.push(user);
+    }
+    
+    const createdRegularUsers = await User.insertMany(regularUsers);
+    console.log(`Created ${createdRegularUsers.length} regular users (students)`);
+
+    // Create class members (students) for each class
+    const classMembers = [];
+    for (const classItem of createdClasses) {
+      // Create 5-15 students for each class
+      const numStudents = faker.number.int({ min: 5, max: 15 });
+      
+      // Get random users from the created regular users
+      const shuffledUsers = faker.helpers.shuffle([...createdRegularUsers]);
+      const selectedUsers = shuffledUsers.slice(0, numStudents);
+      
+      for (const user of selectedUsers) {
         const classMember = {
-          firstName: user.firstName,
-          secondName: user.middleName || "N/A", // Use middleName as secondName if available, otherwise "N/A"
-          lastName: user.lastName,
+          userId: user._id,
           classId: classItem._id,
         };
         classMembers.push(classMember);
@@ -180,7 +209,42 @@ const seed = async () => {
     await ClassMember.insertMany(classMembers);
     console.log(`Created ${classMembers.length} class members`);
 
-    console.log("Seeding completed successfully!");
+    // Verify the seeding by checking student counts
+    console.log("\n=== Class Summary ===");
+    for (const classItem of createdClasses) {
+      const studentCount = await ClassMember.countDocuments({ classId: classItem._id });
+      console.log(`${classItem.name}: ${studentCount} students`);
+    }
+
+    console.log("\nSeeding completed successfully!");
+
+    // Demonstrate API functionality by creating a test class with students
+    console.log("\n=== Testing API Functionality ===");
+    const testClass = new Class({
+      name: "Test Class - API Demo",
+      instructor: createdInstructors[0]._id,
+      organization: organization._id,
+    });
+    await testClass.save();
+
+    // Get some users to be test students for the demo class
+    const testStudentUsers = await User.find({ 
+      organization: organization._id,
+              role: { $ne: 'instructor' } // Exclude instructors
+    }).limit(3);
+
+    const testClassMembers = testStudentUsers.map(user => ({
+      userId: user._id,
+      classId: testClass._id,
+    }));
+
+    await ClassMember.insertMany(testClassMembers);
+    
+    // Verify the test class
+    const finalStudentCount = await ClassMember.countDocuments({ classId: testClass._id });
+    console.log(`Test Class "${testClass.name}": ${finalStudentCount} students`);
+    console.log("API functionality test completed!");
+
   } catch (error) {
     console.error("Error seeding data:", error);
   } finally {

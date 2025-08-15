@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { Class } from "../models/Class";
 import { ClassAttendance } from "../models/ClassAttendance";
+import { ClassMember } from "../models/ClassMember";
 import { User } from "../models/User";
 
 // Class Management Functions
@@ -13,7 +14,7 @@ export const createClass = async (req: Request, res: Response) => {
       });
     }
 
-    const { name, instructor } = req.body;
+    const { name, instructor, students } = req.body;
 
     if (!name || !instructor) {
       return res.status(400).json({
@@ -43,14 +44,49 @@ export const createClass = async (req: Request, res: Response) => {
 
     await classRecord.save();
 
+    // Add students to the class if provided
+    if (students && Array.isArray(students) && students.length > 0) {
+      // Validate that all student IDs exist and belong to the organization
+      const studentUsers = await User.find({
+        _id: { $in: students },
+        organization: req.organization,
+      });
+
+      if (studentUsers.length !== students.length) {
+        return res.status(400).json({
+          error: "Invalid student IDs",
+          details: "Some student IDs do not exist or do not belong to this organization",
+        });
+      }
+
+      const classMembers = students.map((studentId: string) => ({
+        userId: studentId,
+        classId: classRecord._id,
+      }));
+
+      await ClassMember.insertMany(classMembers);
+    }
+
     await classRecord.populate({
       path: "instructor",
       select: "firstName lastName email",
     });
 
+    // Populate students for the response
+    const classMembers = await ClassMember.find({ classId: classRecord._id })
+      .populate({
+        path: "userId",
+        select: "firstName middleName lastName email phoneNumber gender",
+      });
+    const classWithStudents = {
+      ...classRecord.toObject(),
+      students: classMembers.map(member => member.userId),
+      studentCount: classMembers.length,
+    };
+
     res.status(201).json({
       message: "Class created successfully",
-      class: classRecord,
+      class: classWithStudents,
     });
   } catch (error) {
     console.error("Error creating class:", error);
@@ -77,7 +113,23 @@ export const getClasses = async (req: Request, res: Response) => {
       })
       .sort({ createdAt: -1 });
 
-    res.json(classes);
+    // Populate students for each class
+    const classesWithStudents = await Promise.all(
+      classes.map(async (classRecord) => {
+        const students = await ClassMember.find({ classId: classRecord._id })
+          .populate({
+            path: "userId",
+            select: "firstName middleName lastName email phoneNumber gender",
+          });
+        return {
+          ...classRecord.toObject(),
+          students: students.map(member => member.userId),
+          studentCount: students.length,
+        };
+      })
+    );
+
+    res.json(classesWithStudents);
   } catch (error) {
     console.error("Error fetching classes:", error);
     res.status(500).json({
@@ -111,7 +163,19 @@ export const getClassById = async (req: Request, res: Response) => {
       });
     }
 
-    res.json(classRecord);
+    // Populate students for the class
+    const students = await ClassMember.find({ classId: classRecord._id })
+      .populate({
+        path: "userId",
+        select: "firstName middleName lastName email phoneNumber gender",
+      });
+    const classWithStudents = {
+      ...classRecord.toObject(),
+      students: students.map(member => member.userId),
+      studentCount: students.length,
+    };
+
+    res.json(classWithStudents);
   } catch (error) {
     console.error("Error fetching class:", error);
     res.status(500).json({
@@ -142,7 +206,7 @@ export const updateClass = async (req: Request, res: Response) => {
       });
     }
 
-    const { name, instructor } = req.body;
+    const { name, instructor, students } = req.body;
 
     if (instructor) {
       // Validate that instructor exists and belongs to the organization
@@ -159,17 +223,59 @@ export const updateClass = async (req: Request, res: Response) => {
       }
     }
 
-    Object.assign(classRecord, req.body);
+    // Update class details
+    Object.assign(classRecord, { name, instructor });
     await classRecord.save();
+
+    // Update students if provided
+    if (students && Array.isArray(students)) {
+      // Remove existing students
+      await ClassMember.deleteMany({ classId: classRecord._id });
+      
+      // Add new students
+      if (students.length > 0) {
+        // Validate that all student IDs exist and belong to the organization
+        const studentUsers = await User.find({
+          _id: { $in: students },
+          organization: req.organization,
+        });
+
+        if (studentUsers.length !== students.length) {
+          return res.status(400).json({
+            error: "Invalid student IDs",
+            details: "Some student IDs do not exist or do not belong to this organization",
+          });
+        }
+
+        const classMembers = students.map((studentId: string) => ({
+          userId: studentId,
+          classId: classRecord._id,
+        }));
+
+        await ClassMember.insertMany(classMembers);
+      }
+    }
 
     await classRecord.populate({
       path: "instructor",
       select: "firstName lastName email",
     });
 
+    // Populate students for the response
+    const classMembers = await ClassMember.find({ classId: classRecord._id })
+      .populate({
+        path: "userId",
+        select: "firstName middleName lastName email phoneNumber gender",
+      });
+    const classWithStudents = {
+      ...classRecord.toObject(),
+      students: classMembers.map(member => member.userId),
+      studentCount: classMembers.length,
+    };
+
     res.json({
       message: "Class updated successfully",
-      class: classRecord,
+      class: classWithStudents,
     });
   } catch (error) {
     console.error("Error updating class:", error);
@@ -200,6 +306,9 @@ export const deleteClass = async (req: Request, res: Response) => {
         details: "Class not found in your organization.",
       });
     }
+
+    // Delete associated students
+    await ClassMember.deleteMany({ classId: classRecord._id });
 
     await classRecord.deleteOne();
 

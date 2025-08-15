@@ -1,29 +1,18 @@
 import mongoose, { Document, Schema } from "mongoose";
 import { IClass } from "./Class";
+import { IUser } from "./User";
 
 export interface IClassMember extends Document {
-  firstName: string;
-  secondName: string;
-  lastName: string;
+  userId: IUser["_id"];
   classId: IClass["_id"];
 }
 
 const classMemberSchema = new Schema<IClassMember>(
   {
-    firstName: {
-      type: String,
+    userId: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
       required: true,
-      trim: true,
-    },
-    secondName: {
-      type: String,
-      required: true,
-      trim: true,
-    },
-    lastName: {
-      type: String,
-      required: true,
-      trim: true,
     },
     classId: {
       type: Schema.Types.ObjectId,
@@ -35,6 +24,9 @@ const classMemberSchema = new Schema<IClassMember>(
     timestamps: true,
   }
 );
+
+// Create a compound index to ensure a user can only be in a class once
+classMemberSchema.index({ userId: 1, classId: 1 }, { unique: true });
 
 export const ClassMember =
   mongoose.models.ClassMember ||

@@ -47,15 +47,19 @@ export const sendWelcomeEmail = async (
   email: string,
   firstName: string,
   password: string,
-  organizationName: string
+  organizationName: string,
+  customMessage?: string
 ) => {
+  const defaultMessage = "Akaunti yako imeundwa kikamilifu.";
+  const message = customMessage || defaultMessage;
+  
   const mailOptions = {
     from: `"Church App Support" <${process.env.SMTP_FROM}>`,
     to: email,
     subject: `Karibu kwenye ${organizationName} - Taarifa za Akaunti Yako`,
     html: `
       <h1>Karibu ${organizationName}, ${firstName}!</h1>
-      <p>Akaunti yako imeundwa kikamilifu.</p>
+      <p>${message}</p>
       <p>Hizi ndizo taarifa zako za kuingia:</p>
       <p><strong>Barua pepe:</strong> ${email}</p>
       <p><strong>Nenosiri:</strong> ${password}</p>

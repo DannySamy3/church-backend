@@ -2,7 +2,7 @@ import express from "express";
 import { upload } from "../middleware/upload";
 import {
   getAllUsers,
-  // updateUserRole
+  updateUserRole,
   deleteUser,
   createUser,
   getUserById,
@@ -34,6 +34,9 @@ router.post("/", upload.single("profileImage"), createUser);
 
 // Add a new user via scan (optional image)
 router.post("/scan", upload.single("profileImage"), addScanUser);
+
+// Update user role
+router.put("/:userId/role", updateUserRole);
 
 // Delete user
 router.delete("/:userId", deleteUser);

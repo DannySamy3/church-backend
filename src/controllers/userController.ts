@@ -47,11 +47,57 @@ export const updateUserRole = async (req: Request, res: Response) => {
       return res.status(404).json({ error: "User not found" });
     }
 
+    // Check if user is being promoted from REGULAR to a role that requires email/password
+    const isBeingPromoted = user.role === UserRole.REGULAR && role !== UserRole.REGULAR;
+    
+    if (isBeingPromoted) {
+      // Check if user has email
+      if (!user.email) {
+        return res.status(400).json({ 
+          error: "User must have an email address to be promoted to this role",
+          details: "Please add an email address to the user before promoting them"
+        });
+      }
+
+      // Generate password for the user
+      const generatedPassword = generateRandomPassword(user.firstName, user.lastName);
+      user.password = generatedPassword;
+    }
+
     user.role = role;
     await user.save();
 
+    // Send email with credentials if user was promoted
+    if (isBeingPromoted && user.email) {
+      let organizationName = "Kanisa";
+      if (req.organization) {
+        const org = await Organization.findById(req.organization);
+        if (org && org.name) {
+          organizationName = org.name;
+        }
+      }
+
+      const roleMessage = role === UserRole.INSTRUCTOR 
+        ? "Umepewa jukumu la mwalimu" 
+        : "Umepewa jukumu jipya";
+
+      const emailSent = await sendWelcomeEmail(
+        user.email,
+        user.firstName,
+        user.password, // This will be the generated password
+        organizationName,
+        roleMessage
+      );
+
+      if (!emailSent) {
+        console.warn(`Failed to send credentials email to ${user.email}`);
+      }
+    }
+
     res.json({
-      message: "User role updated successfully",
+      message: isBeingPromoted 
+        ? "User role updated successfully and credentials sent via email"
+        : "User role updated successfully",
       user: {
         id: user._id,
         firstName: user.firstName,
